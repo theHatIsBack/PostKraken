@@ -64,20 +64,23 @@ args <- parser$parse_args()
 
 #creating a function to pull out all the reads that match the IDs
 filtReads <- function(ID, dataframe){
+  #creating the regular exspression search term
+  regID <- paste('\\b', ID, '\\b', sep = '')
+  
   #finding lines that match our ID
-  listOfMatches <- grep(pattern = ID, dataframe)
+  listOfMatches <- grep(pattern = regID, dataframe)
   
   #creating the temp variables
-  i <- 1
+  index <- 1
   fReads <- c()
   
   for (seqLine in listOfMatches) {
     #pulling out the lines with matches and adding the strings to a list
-    fReads[i] <- dataframe[seqLine] #header
-    fReads[(i+1)] <- dataframe[(seqLine+1)] #sequence Data
+    fReads[index] <- dataframe[seqLine] #header
+    fReads[(index + 1)] <- dataframe[(seqLine + 1)] #sequence Data
     
     #adding to the iterator
-    i <- i+2
+    index <- index + 2
     
   }
   
@@ -91,7 +94,7 @@ findIDsBellow <- function(ID, dataframe){
   regID <- paste('\\b', ID, '\\b', sep = '')
   
   #removing any levels above the supplied taxa ID
-  lower <- grep(dataframe$V5, pattern = regID)
+  lower <- grep(pattern = regID, dataframe$V5)
   upper <- length(dataframe$V5)
   trimmedReport <- dataframe[lower:upper, , ]
   
@@ -99,10 +102,10 @@ findIDsBellow <- function(ID, dataframe){
   taxaSymbols <- c('R', 'D', 'K', 'P', 'C', 'O', 'F', 'G', 'S')
   
   #pulling out the taxa symbol and splitting it up into characters 
-  pat <- stri_split_boundaries(trimmedReport$V4[1], type='character')
+  pat <- stri_split_boundaries(trimmedReport$V4[1], type = 'character')
   
   #identifying level of taxa code supplied in list 
-  level <- grep(taxaSymbols, pattern = pat[[1]][1])
+  level <- grep(pattern = pat[[1]][1], taxaSymbols)
   
   #checking to make sure ID has levels bellow it and if it doesn't return the original ID
   if(level == 9){
@@ -124,17 +127,17 @@ findIDsBellow <- function(ID, dataframe){
     #using a for loop to output a list of lower taxa ID's
     for (x in trimmedReport2$V4) {
       #pulling out the taxa symbol and splitting it up into characters 
-      pat2 <- stri_split_boundaries(x, type='character')
+      pat2 <- stri_split_boundaries(x, type = 'character')
       
       #checking if the position of the next taxa symbol is higher or lower then the supplied taxa
       #in the taxaSymbols list 
       
-      if (level < grep(taxaSymbols, pattern = pat2[[1]][1])){
+      if (level < grep(pattern = pat2[[1]][1], taxaSymbols)){
         results <- trimmedReport2[index, .(V5),]
         lowerTaxa[index] <- results$V5
         index <- index + 1
         
-      } else if (level == grep(taxaSymbols, pattern = pat2[[1]][1]) & is.na(pat2[[1]][2]) != is.na(pat[[1]][2])) {
+      } else if (level == grep(pattern = pat2[[1]][1], taxaSymbols) & is.na(pat2[[1]][2]) != is.na(pat[[1]][2])) {
         results <- trimmedReport2[index, .(V5),]
         lowerTaxa[index] <- results$V5
         index <- index + 1

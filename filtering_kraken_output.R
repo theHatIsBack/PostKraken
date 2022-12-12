@@ -78,9 +78,9 @@ filtReads <- function(ID, dataframe){
   regID <- paste('\\b', ID, '\\b', sep = '')
   
   #converting the list of kraken output to a data.table
-  table <- as.data.table(matrix(krakenOut, 
+  table <- as.data.table(matrix(dataframe, 
                                 ncol = 2, 
-                                nrow = length(krakenOut)/2, 
+                                nrow = length(dataframe)/2, 
                                 byrow = T))
   
   #using lapply to loop in c and find the header lines that match our ID and 
@@ -224,7 +224,7 @@ main <- function(){
       
       #looping through all of the taxa ID's
       
-      intReads <- filtReads(taxaList, krakenOut)
+      filteredReads <- filtReads(taxaList, krakenOut)
       
       #just running the filtering for the ID provided 
     } else {
@@ -248,7 +248,7 @@ main <- function(){
       #just running the filtering for the ID provided 
     } else {
       taxaList <- c(taxID)
-      filteredReads <- filtReads(taxaList, krakenOut)
+      filteredReads <- exReads(taxaList, krakenOut)
       
     }
     
@@ -258,10 +258,19 @@ main <- function(){
   stri_write_lines(filteredReads, outputFilename, sep = '\n')
   
   #outputting info to the user
-  print(paste('number of taxa IDs found:', length(taxaList)))
-  print(paste('number of reads found:', length(filteredReads)/2))
-  print(paste('percentage of reads retained:', (length(filteredReads)/length(krakenOut)*100), '%'))
-  print(paste('filtered reads have been written to:', outputFilename))
+  if (Method == 'filter'){
+    print(paste('number of taxa IDs found:', length(taxaList)))
+    print(paste('number of reads found:', length(filteredReads)/2))
+    print(paste('percentage of reads retained:', (length(filteredReads)/length(krakenOut)*100), '%'))
+    print(paste('filtered reads have been written to:', outputFilename))
+    
+  }else if(Method == 'exclude'){
+    print(paste('number of taxa IDs found:', length(taxaList)))
+    print(paste('number of reads found:', ((length(krakenOut)/2) - length(filteredReads)/2)))
+    print(paste('percentage of reads retained:', (length(filteredReads)/length(krakenOut)*100), '%'))
+    print(paste('filtered reads have been written to:', outputFilename))
+    
+  }
   
 }
 

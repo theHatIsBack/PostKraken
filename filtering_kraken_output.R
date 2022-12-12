@@ -77,22 +77,21 @@ filtReads <- function(ID, dataframe){
   #creating the regular exspression search term
   regID <- paste('\\b', ID, '\\b', sep = '')
   
-  #finding lines that match our ID
-  listOfMatches <- grep(pattern = regID, dataframe)
+  #converting the list of kraken output to a data.table
+  table <- as.data.table(matrix(krakenOut, 
+                                ncol = 2, 
+                                nrow = length(krakenOut)/2, 
+                                byrow = T))
   
-  #creating the temp variables
-  index <- 1
-  fReads <- c()
+  #using lapply to loop in c and find the header lines that match our ID and 
+  #return a vector of positions 
+  index <- sort(unlist(lapply(regID, function(x){ grep(pattern = x, table$V1) })))
   
-  for (seqLine in listOfMatches) {
-    #pulling out the lines with matches and adding the strings to a list
-    fReads[index] <- dataframe[seqLine] #header
-    fReads[(index + 1)] <- dataframe[(seqLine + 1)] #sequence Data
-    
-    #adding to the iterator
-    index <- index + 2
-    
-  }
+  #filtering the table for the sequences of interest
+  fTable <- table[index, ,]
+  
+  #converting the data.table back to a list
+  fReads <- unlist(as.list(t(fTable)))
   
   return(fReads)
 }

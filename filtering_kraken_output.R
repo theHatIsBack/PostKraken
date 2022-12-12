@@ -223,15 +223,13 @@ main <- function(){
       taxaList <- findIDsBellow(taxID, krakenReport)
       
       #looping through all of the taxa ID's
-      for (taxa in taxaList) {
-        intReads <- filtReads(taxa, krakenOut)
-        filteredReads <- append(filteredReads, intReads)
-      }
+      
+      intReads <- filtReads(taxaList, krakenOut)
       
       #just running the filtering for the ID provided 
     } else {
       taxaList <- c(taxID)
-      filteredReads <- filtReads(taxaList[1], krakenOut)
+      filteredReads <- filtReads(taxaList, krakenOut)
       
     }
     

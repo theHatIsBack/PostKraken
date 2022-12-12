@@ -31,11 +31,21 @@ parser$add_argument('-k',
                     help = 'The file name of the kraken output file you want to filter')
 
 parser$add_argument('-o',
-                    '--filtered_reads_output',
+                    '--output_filename',
                     dest = 'output_FileName',
                     type = 'character',
                     required = TRUE,
                     help = 'The file name you want to give the filtered reads')
+
+parser$add_argument('-m',
+                    '--method',
+                    dest = 'method',
+                    choices = c('filter', 'exclude'),
+                    nargs = '?',
+                    default = 'filter',
+                    type = 'character',
+                    required = TRUE,
+                    help = 'filter finds reads that match specified taxa IDs. exclude finds reads that do not match the specified taxa ID')
 
 parser$add_argument('-t',
                     '--taxa',
@@ -85,6 +95,41 @@ filtReads <- function(ID, dataframe){
   }
   
   return(fReads)
+}
+
+
+#creating a function to exclude all the reads that match the IDs
+exReads <- function(ID, dataframe){
+  #ensuring the value passed is the correct datatype
+  ID <- as.list(ID)
+  
+  #looping through the IDs and removing them from the seq file
+  for (i in 1:length(ID)) {
+    #creating the regular expression search term
+    regID <- paste('\\b', ID[i], '\\b', sep = '')
+    
+    #finding lines that match our ID
+    listOfMatches <- grep(pattern = regID, dataframe)
+    
+    #creating the temp variables
+    index <- 1
+    toExclude <- c()
+    
+    #creating a list of positions to exclude 
+    for (seqLine in listOfMatches) {
+      toExclude[index] <- seqLine #header
+      toExclude[(index + 1)] <- (seqLine + 1) #sequence Data
+      
+      #adding to the iterator
+      index <- index + 2
+      
+    }
+    
+    #excluding the matching reads 
+    dataframe <- dataframe[-toExclude] 
+  }
+  
+  return(dataframe)
 }
 
 
@@ -164,28 +209,51 @@ main <- function(){
   taxID <- args$taxa_ID
   krakenOut <- stri_read_lines(args$kraken_File)
   outputFilename <- args$output_FileName
+  Method <- args$method
   
   #creating a list to collect the output
   filteredReads <- c()
   
-  #running the findIDsBellow function and filtering all ID's returned 
-  if (include_taxa_levels_bellow == T) {
-    #importing the data
-    krakenReport <- fread(args$kraken_Report_Filename, header = F)
-    
-    #pulling out all the need ID's from the report
-    taxaList <- findIDsBellow(taxID, krakenReport)
-    
-    #looping through all of the taxa ID's
-    for (taxa in taxaList) {
-      intReads <- filtReads(taxa, krakenOut)
-      filteredReads <- append(filteredReads, intReads)
+  if (Method == 'filter') {
+    #running the findIDsBellow function and filtering all ID's returned 
+    if (include_taxa_levels_bellow == T) {
+      #importing the data
+      krakenReport <- fread(args$kraken_Report_Filename, header = F)
+      
+      #pulling out all the need ID's from the report
+      taxaList <- findIDsBellow(taxID, krakenReport)
+      
+      #looping through all of the taxa ID's
+      for (taxa in taxaList) {
+        intReads <- filtReads(taxa, krakenOut)
+        filteredReads <- append(filteredReads, intReads)
+      }
+      
+      #just running the filtering for the ID provided 
+    } else {
+      taxaList <- c(taxID)
+      filteredReads <- filtReads(taxaList[1], krakenOut)
+      
     }
     
-    #just running the filtering for the ID provided 
-  } else {
-    taxaList <- c(taxID)
-    filteredReads <- filtReads(taxaList[1], krakenOut)
+  } else if (Method == 'exclude'){
+    #running the findIDsBellow function and removing all ID's returned
+    if (include_taxa_levels_bellow == T) {
+      #importing the data
+      krakenReport <- fread(args$kraken_Report_Filename, header = F)
+      
+      #pulling out all the need ID's from the report
+      taxaList <- findIDsBellow(taxID, krakenReport)
+      
+      #removing all of the ID's that where found 
+      filteredReads <- exReads(taxaList, krakenOut)
+       
+      #just running the filtering for the ID provided 
+    } else {
+      taxaList <- c(taxID)
+      filteredReads <- filtReads(taxaList, krakenOut)
+      
+    }
     
   }
   
@@ -202,4 +270,4 @@ main <- function(){
 
 main()
 
-#write an exclude function and a findIDsAbove function for the package 
+#write a findIDsAbove function for the package 

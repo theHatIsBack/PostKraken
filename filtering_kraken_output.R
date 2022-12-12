@@ -112,7 +112,7 @@ exReads <- function(ID, dataframe){
   #return a vector of positions 
   index <- sort(unlist(lapply(regID, function(x){ grep(pattern = x, table$V1) })))
   
-  #filtering the table for the sequences of interest
+  #excluding specified sequences from the table 
   excluTable <- table[!index, ,]
   
   #converting the data.table back to a list
@@ -266,4 +266,3 @@ main <- function(){
 
 main()
 
-#write a findIDsAbove function for the package 

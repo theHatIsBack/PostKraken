@@ -99,36 +99,26 @@ filtReads <- function(ID, dataframe){
 
 #creating a function to exclude all the reads that match the IDs
 exReads <- function(ID, dataframe){
-  #ensuring the value passed is the correct datatype
-  ID <- as.list(ID)
+  #creating the regular exspression search term
+  regID <- paste('\\b', ID, '\\b', sep = '')
   
-  #looping through the IDs and removing them from the seq file
-  for (i in 1:length(ID)) {
-    #creating the regular expression search term
-    regID <- paste('\\b', ID[i], '\\b', sep = '')
-    
-    #finding lines that match our ID
-    listOfMatches <- grep(pattern = regID, dataframe)
-    
-    #creating the temp variables
-    index <- 1
-    toExclude <- c()
-    
-    #creating a list of positions to exclude 
-    for (seqLine in listOfMatches) {
-      toExclude[index] <- seqLine #header
-      toExclude[(index + 1)] <- (seqLine + 1) #sequence Data
-      
-      #adding to the iterator
-      index <- index + 2
-      
-    }
-    
-    #excluding the matching reads 
-    dataframe <- dataframe[-toExclude] 
-  }
+  #converting the list of kraken output to a data.table
+  table <- as.data.table(matrix(dataframe, 
+                                ncol = 2, 
+                                nrow = length(dataframe)/2, 
+                                byrow = T))
   
-  return(dataframe)
+  #using lapply to loop in c and find the header lines that match our ID and 
+  #return a vector of positions 
+  index <- sort(unlist(lapply(regID, function(x){ grep(pattern = x, table$V1) })))
+  
+  #filtering the table for the sequences of interest
+  excluTable <- table[!index, ,]
+  
+  #converting the data.table back to a list
+  excluReads <- unlist(as.list(t(excluTable)))
+  
+  return(excluReads)
 }
 
 

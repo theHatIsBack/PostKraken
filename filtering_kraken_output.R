@@ -20,7 +20,7 @@ library(argparse)
 
 parser <- ArgumentParser(usage = 'filtering_kraken_output.R [-h] [{PE,SE,C}] -k KRAKEN_FILE [-k2 KRAKEN_FILE_2] -o OUTPUT_FILENAME [-o2 OUTPUT_FILENAME_2] -m [{filter,exclude}] -t TAXA_ID [--include_lower_taxa [{True,False}]] [-r KRAKEN_REPORT_FILENAME]',
                          description = 'Extracting reads identified as a specific taxa(s)',
-                         epilog = 'If you have any issues or sugestions for improvements please headover too:')
+                         epilog = 'If you have any issues or sugestions for improvements please headover too: https://github.com/theHatIsBack/PostKraken')
 
 parser$add_argument(dest = 'input_type',
                     choices = c('PE', 'SE', 'C'),

@@ -52,7 +52,7 @@ usage: filtering_kraken_output.R [-h] [{PE,SE,C}] -k KRAKEN_FILE [-k2 KRAKEN_FIL
 
 
 positional arguments:
-  {PE,SE,C}             A flag to specify the input type: PE = paried end, SE = single end, 
+  {PE,SE,C}             A flag to specify the input type: PE = paired end, SE = single end, 
                         C = assembly file containing contigs
 
 optional arguments:

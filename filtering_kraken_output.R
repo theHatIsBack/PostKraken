@@ -26,7 +26,7 @@ parser$add_argument(dest = 'input_type',
                     choices = c('PE', 'SE', 'C'),
                     nargs = '?',
                     type = 'character',
-                    help = 'A flag to specify the input type: PE = paried end, SE = single end, C = assembly file containing contigs')
+                    help = 'A flag to specify the input type: PE = paired end, SE = single end, C = assembly file containing contigs')
 
 parser$add_argument('-k',
                     '-k1',

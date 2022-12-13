@@ -44,7 +44,11 @@ This script is used to filter through the output of kraken2 and extract/exclude 
 ### Usage and arguments:
 
 ```{bash}
-usage: filtering_kraken_output.R [-h] [{PE,SE,C}] -k KRAKEN_FILE [-k2 KRAKEN_FILE_2] -o OUTPUT_FILENAME [-o2 OUTPUT_FILENAME_2] -m [{filter,exclude}] -t TAXA_ID [--include_lower_taxa [{True,False}]] [-r KRAKEN_REPORT_FILENAME]
+usage: filtering_kraken_output.R [-h] [{PE,SE,C}] -k KRAKEN_FILE [-k2 KRAKEN_FILE_2]
+                                  -o OUTPUT_FILENAME [-o2 OUTPUT_FILENAME_2] 
+                                  -m [{filter,exclude}] -t TAXA_ID 
+                                  [--include_lower_taxa] [{True,False}]]
+                                  [-r KRAKEN_REPORT_FILENAME]
 
 
 positional arguments:

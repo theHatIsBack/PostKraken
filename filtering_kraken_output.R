@@ -18,11 +18,18 @@ library(argparse)
 
 ############################ creating the flags ################################
 
-parser <- ArgumentParser(prog = 'filtering_kraken_output.R',
+parser <- ArgumentParser(usage = 'filtering_kraken_output.R [-h] [{PE,SE,C}] -k KRAKEN_FILE [-k2 KRAKEN_FILE_2] -o OUTPUT_FILENAME [-o2 OUTPUT_FILENAME_2] -m [{filter,exclude}] -t TAXA_ID [--include_lower_taxa [{True,False}]] [-r KRAKEN_REPORT_FILENAME]',
                          description = 'Extracting reads identified as a specific taxa(s)',
                          epilog = 'If you have any issues or sugestions for improvements please headover too:')
 
+parser$add_argument(dest = 'input_type',
+                    choices = c('PE', 'SE', 'C'),
+                    nargs = '?',
+                    type = 'character',
+                    help = 'A flag to specify the input type: PE = paried end, SE = single end, C = assembly file containing contigs')
+
 parser$add_argument('-k',
+                    '-k1',
                     '--kraken_output',
                     dest = 'kraken_File',
                     type = 'character',
@@ -30,12 +37,26 @@ parser$add_argument('-k',
                     required = TRUE,
                     help = 'The file name of the kraken output file you want to filter')
 
+parser$add_argument('-k2',
+                    '--kraken_output_2',
+                    dest = 'kraken_File_2',
+                    type = 'character',
+                    action = 'store',
+                    help = 'The file name of the kraken output file for your reverse reads')
+
 parser$add_argument('-o',
+                    '-o1',
                     '--output_filename',
                     dest = 'output_FileName',
                     type = 'character',
                     required = TRUE,
                     help = 'The file name you want to give the filtered reads')
+
+parser$add_argument('-o2',
+                    '--output_filename_2',
+                    dest = 'output_FileName_2',
+                    type = 'character',
+                    help = 'The file name you want to give the filtered reverse reads')
 
 parser$add_argument('-m',
                     '--method',
@@ -52,7 +73,7 @@ parser$add_argument('-t',
                     dest = 'taxa_ID',
                     type = 'character',
                     required = TRUE,
-                    help = 'The taxa ID you want to filter by')
+                    help = 'The taxa ID you want to filter/exclude by')
 
 parser$add_argument('--include_lower_taxa',
                     choices = c(T, F),
@@ -65,12 +86,12 @@ parser$add_argument('-r',
                     '--kraken_report',
                     dest = 'kraken_Report_Filename',
                     type = 'character',
-                    help = 'The taxa ID you want to filter by')
+                    help = 'The report file from your kraken run')
 
 args <- parser$parse_args()
 
 
-########################## creating the functions ##############################
+#################### creating the functions for the flags ######################
 
 #creating a function to pull out all the reads that match the IDs
 filtReads <- function(ID, dataframe){
@@ -190,75 +211,106 @@ findIDsBellow <- function(ID, dataframe){
 }
 
 
-############################## main workflow ###################################
+############################## data workflow ###################################
 
-main <- function(){
-  #passing data from the flags to variables
-  include_taxa_levels_bellow <- args$include_lower_taxa
-  taxID <- args$taxa_ID
-  krakenOut <- stri_read_lines(args$kraken_File)
-  outputFilename <- args$output_FileName
-  Method <- args$method
-  
+workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile){
   #creating a list to collect the output
   filteredReads <- c()
   
-  if (Method == 'filter') {
+  if (meth == 'filter') {
     #running the findIDsBellow function and filtering all ID's returned 
-    if (include_taxa_levels_bellow == T) {
+    if (includeOtherTaxa == T) {
       #importing the data
       krakenReport <- fread(args$kraken_Report_Filename, header = F)
       
       #pulling out all the need ID's from the report
-      taxaList <- findIDsBellow(taxID, krakenReport)
+      taxaList <- findIDsBellow(ID, krakenReport)
       
       #looping through all of the taxa ID's
       
-      filteredReads <- filtReads(taxaList, krakenOut)
+      filteredReads <- filtReads(taxaList, seqFile)
       
       #just running the filtering for the ID provided 
     } else {
-      taxaList <- c(taxID)
-      filteredReads <- filtReads(taxaList, krakenOut)
+      taxaList <- c(ID)
+      filteredReads <- filtReads(taxaList, seqFile)
       
     }
     
-  } else if (Method == 'exclude'){
+  } else if (meth == 'exclude'){
     #running the findIDsBellow function and removing all ID's returned
-    if (include_taxa_levels_bellow == T) {
+    if (includeOtherTaxa == T) {
       #importing the data
       krakenReport <- fread(args$kraken_Report_Filename, header = F)
       
       #pulling out all the need ID's from the report
-      taxaList <- findIDsBellow(taxID, krakenReport)
+      taxaList <- findIDsBellow(ID, krakenReport)
       
       #removing all of the ID's that where found 
-      filteredReads <- exReads(taxaList, krakenOut)
-       
+      filteredReads <- exReads(taxaList, seqFile)
+      
       #just running the filtering for the ID provided 
     } else {
-      taxaList <- c(taxID)
-      filteredReads <- exReads(taxaList, krakenOut)
+      taxaList <- c(ID)
+      filteredReads <- exReads(taxaList, seqFile)
       
     }
     
   }
   
   #writing the output of the filtering to a file 
-  stri_write_lines(filteredReads, outputFilename, sep = '\n')
+  stri_write_lines(filteredReads, outputFile, sep = '\n')
   
   #outputting info to the user
-  if (Method == 'filter'){
+  if (meth == 'filter'){
+    print(inputFile)
     print(paste('number of taxa IDs found:', length(taxaList)))
     print(paste('number of reads found:', length(filteredReads)/2))
-    print(paste('percentage of reads retained:', (length(filteredReads)/length(krakenOut)*100), '%'))
-    print(paste('filtered reads have been written to:', outputFilename))
+    print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
+    print(paste('filtered reads have been written to:', outputFile))
+    print('')
     
-  }else if(Method == 'exclude'){
+  }else if(meth == 'exclude'){
+    print(inputFile)
     print(paste('number of taxa IDs found:', length(taxaList)))
-    print(paste('number of reads found:', ((length(krakenOut)/2) - length(filteredReads)/2)))
-    print(paste('percentage of reads retained:', (length(filteredReads)/length(krakenOut)*100), '%'))
-    print(paste('filtered reads have been written to:', outputFilename))
+    print(paste('number of reads found:', ((length(seqFile)/2) - length(filteredReads)/2)))
+    print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
+    print(paste('filtered reads have been written to:', outputFile))
+    print('')
+    
+  }
+}
+
+
+############################## main function ###################################
+
+main <- function(){
+  #passing data from the flags to variables:
+  #method variables
+  taxID <- args$taxa_ID
+  include_taxa_levels_bellow <- args$include_lower_taxa
+  Method <- args$method
+  inputType <- args$input_type
+  
+  #input/output file variables
+  inputFilename <- args$kraken_File
+  krakenOut <- stri_read_lines(inputFilename)
+  outputFilename <- args$output_FileName
+  
+  if (inputType == 'SE' | inputType == 'C') {
+    workflow(taxID, krakenOut, outputFilename, Method, include_taxa_levels_bellow, inputFilename)
+    
+  } else if (inputType == 'PE') {
+    #passing data from the flags to variables for additional data need for PE
+    inputFilename2 <- args$kraken_File_2
+    krakenOut2 <- stri_read_lines(inputFilename2)
+    outputFilename2 <- args$output_FileName_2
+    
+    #forward reads
+    workflow(taxID, krakenOut, outputFilename, Method, include_taxa_levels_bellow, inputFilename)
+    
+    #reverse reads
+    workflow(taxID, krakenOut2, outputFilename2, Method, include_taxa_levels_bellow, inputFilename2)
     
   }
   

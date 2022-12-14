@@ -97,13 +97,13 @@ In this section, you will find a series of examples of how to use the flags outl
 #### 1) Filtering paired end data for a supplied taxonomic ID:
 
 ```{bash}
-./filtering_kraken_output.R PE -k F_Reads_classified.fasta -k2 R_Reads_classified.fasta -o F_Reads_filtered.fasta -o2 F_Reads_filtered.fasta -m filter -t 629 
+./filtering_kraken_output.R PE -k F_Reads_classified.fasta -k2 R_Reads_classified.fasta -o F_Reads_filtered.fasta -o2 R_Reads_filtered.fasta -m filter -t 629 
 ```
 
 #### 2) Excluding a supplied taxonomic ID from paired end data:
 
 ```{bash}
-./filtering_kraken_output.R PE -k F_Reads_classified.fasta -k2 R_Reads_classified.fasta -o F_Reads_filtered.fasta -o2 F_Reads_filtered.fasta -m exclude -t 629 
+./filtering_kraken_output.R PE -k F_Reads_classified.fasta -k2 R_Reads_classified.fasta -o F_Reads_filtered.fasta -o2 R_Reads_filtered.fasta -m exclude -t 629 
 ```
 
 #### 3) Filtering an assembly for contigs assigned to a supplied taxonomic ID and those assigned at a more specific level:

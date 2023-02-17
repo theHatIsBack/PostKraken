@@ -1,5 +1,3 @@
-<meta name="google-site-verification" content="1yj9Zunx3-qTrYYcZqMVjn85_tr2aK7BukNkNpK7kRI" />
-
 # PostKraken
 
 A set of tools to process the output from Kraken2

@@ -18,15 +18,13 @@ I intend this to very much be an active project under development. My current pl
 
 In order to run any of the scripts here you'll need to have the following installed on your PATH:
 
--   Python (version 3.2 or higher)
-
 -   R
 
     -   data.table
 
     -   stringi
 
-    -   argparse
+    -   optparse
 
 ## Running Scripts:
 
@@ -44,50 +42,73 @@ This script is used to filter through the output of kraken2 and extract/exclude 
 ### Usage and arguments:
 
 ```{bash}
-usage: filtering_kraken_output.R [-h] [{PE,SE,C}] -k KRAKEN_FILE [-k2 KRAKEN_FILE_2]
-                                  -o OUTPUT_FILENAME [-o2 OUTPUT_FILENAME_2] 
-                                  -m [{filter,exclude}] -t TAXA_ID 
-                                  [--include_lower_taxa] [{True,False}]]
-                                  [-r KRAKEN_REPORT_FILENAME]
+Usage: filtering_kraken_output.R --i [PE,SE,C] --k KRAKEN_FILE [--k2 KRAKEN_FILE_2] 
+                                 --o OUTPUT_FILENAME [--o2 OUTPUT_FILENAME_2]
+				                         --m [F,E] --t TAXA_ID [--include_lower_taxa [T,F]] 
+				                         [--r KRAKEN_REPORT_FILENAME]
 
+Description: Extracting reads identified as a specific taxa(s)
 
-positional arguments:
-  {PE,SE,C}             A flag to specify the input type: PE = paired end, SE = single end, 
-                        C = assembly file containing contigs
+Options:
+	--input_type=[PE, SE, C]
+		A flag to specify the input type: PE = paired end, SE = single end, C = assembly file     
+		containing contigs, this is a required flag
 
-optional arguments:
-  -h, --help                          show this help message and exit
-  
-  -k KRAKEN_FILE, -k1 KRAKEN_FILE, --kraken_output KRAKEN_FILE
-                                      The file name of the kraken output file you want to
-                                      filter
-                                      
-  -k2 KRAKEN_FILE_2, --kraken_output_2 KRAKEN_FILE_2
-                                      The file name of the kraken output file for your
-                                      reverse reads
-                                      
-  -o OUTPUT_FILENAME, -o1 OUTPUT_FILENAME, --output_filename OUTPUT_FILENAME
-                                      The file name you want to give the filtered reads
-                                      
-  -o2 OUTPUT_FILENAME_2, --output_filename_2 OUTPUT_FILENAME_2
-                                      The file name you want to give the filtered reverse
-                                      reads
-                                      
-  -m [{filter,exclude}], --method [{filter,exclude}]
-                                      filter finds reads that match specified taxa IDs.
-                                      exclude finds reads that do not match the specified
-                                      taxa ID
-                                      
-  -t TAXA_ID, --taxa TAXA_ID
-                                      The taxa ID you want to filter/exclude by
-                                      
-  --include_lower_taxa [{True,False}]
-                                      whether to include lower taxa or not. Defualt is F if
-                                      the T value is passed you will need to include the -r
-                                      flag for it to work
-                                      
-  -r KRAKEN_REPORT_FILENAME, --kraken_report KRAKEN_REPORT_FILENAME
-                                      The report file from your kraken run
+	--i=[PE, SE, C]
+		A flag to specify the input type: PE = paired end, SE = single end, C = assembly file 
+		containing contigs, this is a required flag
+
+	--kraken_output=[KRAKEN2 OUTPUT FILE]
+		The file name of the kraken output file you want to filter, this is a required flag
+
+	--k=[KRAKEN2 OUTPUT FILE]
+		The file name of the kraken output file you want to filter, this is a required flag
+
+	--kraken_output_2=[KRAKEN2 OUTPUT FILE]
+		The file name of the kraken output file for your reverse reads
+
+	--k2=[KRAKEN2 OUTPUT FILE]
+		The file name of the kraken output file for your reverse reads
+
+	--output_filename=[NAME OF OUTPUT FILE]
+		The file name you want to give the filtered reads
+
+	--o=[NAME OF OUTPUT FILE]
+		The file name you want to give the filtered reads
+
+	--output_filename_2=[NAME OF OUTPUT FILE]
+		The file name you want to give the filtered reverse reads
+
+	--o2=[NAME OF OUTPUT FILE]
+		The file name you want to give the filtered reverse reads
+
+	--method=[F, E]
+		F = filter, E = exclude. Filter finds reads that match specified taxa IDs.
+		Exclude finds reads that do not match the specified taxa ID, this is a required flag
+
+	--m=[F, E]
+		F = filter, E = exclude. Filter finds reads that match specified taxa IDs.
+		Exclude finds reads that do not match the specified taxa ID, this is a required flag
+
+	--taxa=[TAXA ID]
+		The taxa ID you want to filter/exclude by, this is a required flag
+
+	--t=[TAXA ID]
+		The taxa ID you want to filter/exclude by, this is a required flag
+
+	--include_lower_taxa=[F, T]
+		whether to include lower taxa or not: F = do not include lower taxa, T = include lower 
+		taxa.Defualt is F if the T value is passed you will need to include the --r flag for it
+		to work
+
+	--r=[KRAKEN2 REPORT FILE]
+		The report file from your kraken run
+
+	--kraken_report=[KRAKEN2 REPORT FILE]
+		The report file from your kraken run
+
+	-h, --help
+		Show this help message and exit
 ```
 
 ### Examples:
@@ -97,23 +118,23 @@ In this section, you will find a series of examples of how to use the flags outl
 #### 1) Filtering paired end data for a supplied taxonomic ID:
 
 ```{bash}
-./filtering_kraken_output.R PE -k F_Reads_classified.fasta -k2 R_Reads_classified.fasta -o F_Reads_filtered.fasta -o2 R_Reads_filtered.fasta -m filter -t 629 
+./filtering_kraken_output.R --i PE --k F_Reads_classified.fasta --k2 R_Reads_classified.fasta --o F_Reads_filtered.fasta --o2 R_Reads_filtered.fasta --m F --t 629 
 ```
 
 #### 2) Excluding a supplied taxonomic ID from paired end data:
 
 ```{bash}
-./filtering_kraken_output.R PE -k F_Reads_classified.fasta -k2 R_Reads_classified.fasta -o F_Reads_filtered.fasta -o2 R_Reads_filtered.fasta -m exclude -t 629 
+./filtering_kraken_output.R --i PE --k F_Reads_classified.fasta --k2 R_Reads_classified.fasta --o F_Reads_filtered.fasta --o2 R_Reads_filtered.fasta --m E --t 629 
 ```
 
 #### 3) Filtering an assembly for contigs assigned to a supplied taxonomic ID and those assigned at a more specific level:
 
 ```{bash}
-./filtering_kraken_output.R C -k assembly_classified.fasta -o assembly_filtered.fasta -m filter -t 629 --include_lower_taxa T -r assembly_report
+./filtering_kraken_output.R --i C --k assembly_classified.fasta --o assembly_filtered.fasta --m F --t 629 --include_lower_taxa T --r assembly_report
 ```
 
 #### 4) Excluding contigs assigned to a supplied taxonomic ID and those assigned at a more specific level from an assembly:
 
 ```{bash}
-./filtering_kraken_output.R C -k assembly_classified.fasta -o assembly_filtered.fasta -m exclude -t 629 --include_lower_taxa T -r assembly_report
+./filtering_kraken_output.R --i C --k assembly_classified.fasta --o assembly_filtered.fasta --m E --t 629 --include_lower_taxa T --r assembly_report
 ```

@@ -12,83 +12,155 @@
 
 #importing the different library's 
 library(data.table)
+library(optparse)
 library(stringi)
-library(argparse)
 
 
 ############################ creating the flags ################################
 
-parser <- ArgumentParser(usage = 'filtering_kraken_output.R [-h] [{PE,SE,C}] -k KRAKEN_FILE [-k2 KRAKEN_FILE_2] -o OUTPUT_FILENAME [-o2 OUTPUT_FILENAME_2] -m [{filter,exclude}] -t TAXA_ID [--include_lower_taxa [{True,False}]] [-r KRAKEN_REPORT_FILENAME]',
-                         description = 'Extracting reads identified as a specific taxa(s)',
-                         epilog = 'If you have any issues or sugestions for improvements please headover too: https://github.com/theHatIsBack/PostKraken')
+option_list <- list(
+  make_option(c('--input_type'), 
+              dest = 'input_type',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[PE, SE, C]',
+              help = 'A flag to specify the input type: PE = paired end, SE = single end, C = assembly file containing contigs, this is a required flag'),
+  
+  make_option(c('--i'), 
+              dest = 'input_type',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[PE, SE, C]',
+              help = 'A flag to specify the input type: PE = paired end, SE = single end, C = assembly file containing contigs, this is a required flag'),
+  
+  make_option(c('--kraken_output'), 
+              dest = 'kraken_File',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[kraken2 output file]',
+              help = 'The file name of the kraken output file you want to filter, this is a required flag'),
+  
+  make_option(c('--k'), 
+              dest = 'kraken_File',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[kraken2 output file]',
+              help = 'The file name of the kraken output file you want to filter, this is a required flag'),
+  
+  make_option(c('--kraken_output_2'), 
+              dest = 'kraken_File_2',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[kraken2 output file]',
+              help = 'The file name of the kraken output file for your reverse reads'),
+  
+  make_option(c('--k2'), 
+              dest = 'kraken_File_2',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[kraken2 output file]',
+              help = 'The file name of the kraken output file for your reverse reads'),
+  
+  make_option(c('--output_filename'), 
+              dest = 'output_FileName',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[name of output file]',
+              help = 'The file name you want to give the filtered reads'),
+  
+  make_option(c('--o'), 
+              dest = 'output_FileName',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[name of output file]',
+              help = 'The file name you want to give the filtered reads'),
+  
+  make_option(c('--output_filename_2'), 
+              dest = 'output_FileName_2',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[name of output file]',
+              help = 'The file name you want to give the filtered reverse reads'),
+  
+  make_option(c('--o2'), 
+              dest = 'output_FileName_2',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[name of output file]',
+              help = 'The file name you want to give the filtered reverse reads'),
+  
+  make_option(c('--method'), 
+              dest = 'method',
+              action = 'store', 
+              default = 'filter', 
+              type = 'character',
+              metavar = '[F, E]',
+              help = 'F = filter, E = exclude. Filter finds reads that match specified taxa IDs. \n\t\tExclude finds reads that do not match the specified taxa ID, this is a required flag'),
 
-parser$add_argument(dest = 'input_type',
-                    choices = c('PE', 'SE', 'C'),
-                    nargs = '?',
-                    type = 'character',
-                    help = 'A flag to specify the input type: PE = paired end, SE = single end, C = assembly file containing contigs')
+  make_option(c('--m'), 
+              dest = 'method',
+              action = 'store', 
+              default = 'filter', 
+              type = 'character',
+              metavar = '[F, E]',
+              help = 'F = filter, E = exclude. Filter finds reads that match specified taxa IDs. \n\t\tExclude finds reads that do not match the specified taxa ID, this is a required flag'),
+  
+  make_option(c('--taxa'), 
+              dest = 'taxa_ID',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[taxa ID]',
+              help = 'The taxa ID you want to filter/exclude by, this is a required flag'),
+  
+  make_option(c('--t'), 
+              dest = 'taxa_ID',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[taxa ID]',
+              help = 'The taxa ID you want to filter/exclude by, this is a required flag'),
+  
+  make_option(c('--include_lower_taxa'), 
+              dest = 'include_lower_taxa',
+              action = 'store', 
+              default = F, 
+              type = 'logical',
+              metavar = '[F, T]',
+              help = 'whether to include lower taxa or not: F = do not include lower taxa, T = include lower taxa. \n\t\tDefualt is F if the T value is passed you will need to include the --r flag for it to work'),
+  
+  make_option(c('--r'), 
+              dest = 'kraken_Report_Filename',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[kraken2 report file]',
+              help = 'The report file from your kraken run'), 
+  
+  make_option(c('--kraken_report'), 
+              dest = 'kraken_Report_Filename',
+              action = 'store', 
+              default = NA, 
+              type = 'character',
+              metavar = '[kraken2 report file]',
+              help = 'The report file from your kraken run')
+  
+)
 
-parser$add_argument('-k',
-                    '-k1',
-                    '--kraken_output',
-                    dest = 'kraken_File',
-                    type = 'character',
-                    action = 'store',
-                    required = TRUE,
-                    help = 'The file name of the kraken output file you want to filter')
-
-parser$add_argument('-k2',
-                    '--kraken_output_2',
-                    dest = 'kraken_File_2',
-                    type = 'character',
-                    action = 'store',
-                    help = 'The file name of the kraken output file for your reverse reads')
-
-parser$add_argument('-o',
-                    '-o1',
-                    '--output_filename',
-                    dest = 'output_FileName',
-                    type = 'character',
-                    required = TRUE,
-                    help = 'The file name you want to give the filtered reads')
-
-parser$add_argument('-o2',
-                    '--output_filename_2',
-                    dest = 'output_FileName_2',
-                    type = 'character',
-                    help = 'The file name you want to give the filtered reverse reads')
-
-parser$add_argument('-m',
-                    '--method',
-                    dest = 'method',
-                    choices = c('filter', 'exclude'),
-                    nargs = '?',
-                    default = 'filter',
-                    type = 'character',
-                    required = TRUE,
-                    help = 'filter finds reads that match specified taxa IDs. exclude finds reads that do not match the specified taxa ID')
-
-parser$add_argument('-t',
-                    '--taxa',
-                    dest = 'taxa_ID',
-                    type = 'character',
-                    required = TRUE,
-                    help = 'The taxa ID you want to filter/exclude by')
-
-parser$add_argument('--include_lower_taxa',
-                    choices = c(T, F),
-                    nargs = '?',
-                    default = 'F',
-                    type = 'logical',
-                    help = 'whether to include lower taxa or not. Defualt is F if the T value is passed you will need to include the -r flag for it to work')
-
-parser$add_argument('-r',
-                    '--kraken_report',
-                    dest = 'kraken_Report_Filename',
-                    type = 'character',
-                    help = 'The report file from your kraken run')
-
-args <- parser$parse_args()
+opt <- parse_args(OptionParser(option_list = option_list, 
+                               description = 'Description: Extracting reads identified as a specific taxa(s)',
+                               usage = 'filtering_kraken_output.R --i [PE,SE,C] --k KRAKEN_FILE [--k2 KRAKEN_FILE_2] --o OUTPUT_FILENAME [--o2 OUTPUT_FILENAME_2] \n\t\t\t\t --m [F,E] --t TAXA_ID [--include_lower_taxa [T,F]] [--r KRAKEN_REPORT_FILENAME]\n',
+                               epilogue = 'If you have any issues or suggestions for improvements please headover too: https://github.com/theHatIsBack/PostKraken\n'))
 
 
 #################### creating the functions for the flags ######################
@@ -217,11 +289,11 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
   #creating a list to collect the output
   filteredReads <- c()
   
-  if (meth == 'filter') {
+  if (meth == 'F') {
     #running the findIDsBellow function and filtering all ID's returned 
     if (includeOtherTaxa == T) {
       #importing the data
-      krakenReport <- fread(args$kraken_Report_Filename, header = F)
+      krakenReport <- fread(opt$kraken_Report_Filename, header = F)
       
       #pulling out all the need ID's from the report
       taxaList <- findIDsBellow(ID, krakenReport)
@@ -237,11 +309,11 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
       
     }
     
-  } else if (meth == 'exclude'){
+  } else if (meth == 'E'){
     #running the findIDsBellow function and removing all ID's returned
     if (includeOtherTaxa == T) {
       #importing the data
-      krakenReport <- fread(args$kraken_Report_Filename, header = F)
+      krakenReport <- fread(opt$kraken_Report_Filename, header = F)
       
       #pulling out all the need ID's from the report
       taxaList <- findIDsBellow(ID, krakenReport)
@@ -262,7 +334,7 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
   stri_write_lines(filteredReads, outputFile, sep = '\n')
   
   #outputting info to the user
-  if (meth == 'filter'){
+  if (meth == 'F'){
     print(inputFile)
     print(paste('number of taxa IDs found:', length(taxaList)))
     print(paste('number of reads found:', length(filteredReads)/2))
@@ -270,7 +342,7 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
     print(paste('filtered reads have been written to:', outputFile))
     print('')
     
-  }else if(meth == 'exclude'){
+  }else if(meth == 'E'){
     print(inputFile)
     print(paste('number of taxa IDs found:', length(taxaList)))
     print(paste('number of reads found:', ((length(seqFile)/2) - length(filteredReads)/2)))
@@ -287,24 +359,39 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
 main <- function(){
   #passing data from the flags to variables:
   #method variables
-  taxID <- args$taxa_ID
-  include_taxa_levels_bellow <- args$include_lower_taxa
-  Method <- args$method
-  inputType <- args$input_type
+  taxID <- opt$taxa_ID 
+  include_taxa_levels_bellow <- opt$include_lower_taxa
+  Method <- opt$method
+  inputType <- opt$input_type
   
   #input/output file variables
-  inputFilename <- args$kraken_File
+  inputFilename <- opt$kraken_File
   krakenOut <- stri_read_lines(inputFilename)
-  outputFilename <- args$output_FileName
+  outputFilename <- opt$output_FileName
+  
+  #checking for required flags 
+  if (is.na(opt$input_type) == T) {
+    stop('Required flag --i, --input_type not specified')
+    
+  } else if (is.na(opt$kraken_File) == T) {
+    stop('Required flag --k, --kraken_output not specified')
+    
+  } else if (is.na(opt$method) == T) {
+    stop('Required flag --m, --method not specified')
+    
+  } else if (is.na(opt$taxa_ID) == T) {
+    stop('Required flag --t, --taxa not specified')
+    
+  }
   
   if (inputType == 'SE' | inputType == 'C') {
     workflow(taxID, krakenOut, outputFilename, Method, include_taxa_levels_bellow, inputFilename)
     
   } else if (inputType == 'PE') {
     #passing data from the flags to variables for additional data need for PE
-    inputFilename2 <- args$kraken_File_2
+    inputFilename2 <- opt$kraken_File_2
     krakenOut2 <- stri_read_lines(inputFilename2)
-    outputFilename2 <- args$output_FileName_2
+    outputFilename2 <- opt$output_FileName_2
     
     #forward reads
     workflow(taxID, krakenOut, outputFilename, Method, include_taxa_levels_bellow, inputFilename)

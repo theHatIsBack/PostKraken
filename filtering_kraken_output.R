@@ -11,9 +11,9 @@
 ########################## preparing the workspace #############################
 
 #importing the different library's 
-library(data.table)
-library(optparse)
-library(stringi)
+require(data.table) -> dt_package
+require(optparse) -> opt_package
+require(stringi) -> stri_package
 
 
 ############################ creating the flags ################################
@@ -368,6 +368,41 @@ main <- function(){
   inputFilename <- opt$kraken_File
   krakenOut <- stri_read_lines(inputFilename)
   outputFilename <- opt$output_FileName
+  
+  #checking for the required packages and if not installed prompting the user to install 
+  if (dt_package == F) {
+    install <- readline(prompt = 'Required package data.table not installed, would you like to install it? (y/n)')
+    
+    if (install == 'y' | install == 'Y') {
+      install.packages('data.table')
+      
+    } else {
+      stop('Required package not installed')
+    }
+    
+  } else if (opt_package == F) {
+    install <- readline(prompt = 'Required package optparse not installed, would you like to install it? (y/n)')
+    
+    if (install == 'y' | install == 'Y') {
+      install.packages('data.table')
+      
+    } else {
+      stop('Required package not installed')
+    }
+    
+    
+  } else if (stri_package == F) {
+    install <- readline(prompt = 'Required package stringi not installed, would you like to install it? (y/n)')
+    
+    if (install == 'y' | install == 'Y') {
+      install.packages('data.table')
+      
+    } else {
+      stop('Required package not installed')
+    }
+    
+    
+  }
   
   #checking for required flags 
   if (is.na(opt$input_type) == T) {

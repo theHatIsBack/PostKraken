@@ -11,9 +11,9 @@
 ########################## preparing the workspace #############################
 
 #importing the different library's 
-require(data.table) -> dt_package
-require(optparse) -> opt_package
-require(stringi) -> stri_package
+require(data.table, quietly = T) -> dt_package
+require(optparse, quietly = T) -> opt_package
+require(stringi, quietly = T) -> stri_package
 
 
 ############################ creating the flags ################################
@@ -166,15 +166,24 @@ opt <- parse_args(OptionParser(option_list = option_list,
 #################### creating the functions for the flags ######################
 
 #creating a function to pull out all the reads that match the IDs
-filtReads <- function(ID, dataframe){
+filtReads <- function(ID, dataframe, in_filename){
   #creating the regular exspression search term
   regID <- paste('\\b', ID, '\\b', sep = '')
   
   #converting the list of kraken output to a data.table
-  table <- as.data.table(matrix(dataframe, 
-                                ncol = 2, 
-                                nrow = length(dataframe)/2, 
-                                byrow = T))
+  if (stri_detect(in_filename, fixed = '.fasta') == T | stri_detect(in_filename, regex = '.fa\\b') == T) {
+    table <- as.data.table(matrix(dataframe, 
+                                  ncol = 2, 
+                                  nrow = length(dataframe)/2, 
+                                  byrow = T))
+    
+  } else if (stri_detect(in_filename, fixed = '.fastq') == T | stri_detect(in_filename, regex = '.fq\\b') == T) {
+    table <- as.data.table(matrix(dataframe, 
+                                  ncol = 4, 
+                                  nrow = length(dataframe)/4, 
+                                  byrow = T))
+    
+  }
   
   #using lapply to loop in c and find the header lines that match our ID and 
   #return a vector of positions 
@@ -191,15 +200,24 @@ filtReads <- function(ID, dataframe){
 
 
 #creating a function to exclude all the reads that match the IDs
-exReads <- function(ID, dataframe){
+exReads <- function(ID, dataframe, in_filename){
   #creating the regular exspression search term
   regID <- paste('\\b', ID, '\\b', sep = '')
   
   #converting the list of kraken output to a data.table
-  table <- as.data.table(matrix(dataframe, 
-                                ncol = 2, 
-                                nrow = length(dataframe)/2, 
-                                byrow = T))
+  if (stri_detect(in_filename, fixed = '.fasta') == T | stri_detect(in_filename, regex = '.fa\\b') == T) {
+    table <- as.data.table(matrix(dataframe, 
+                                  ncol = 2, 
+                                  nrow = length(dataframe)/2, 
+                                  byrow = T))
+    
+  } else if (stri_detect(in_filename, fixed = '.fastq') == T | stri_detect(in_filename, regex = '.fq\\b') == T) {
+    table <- as.data.table(matrix(dataframe, 
+                                  ncol = 4, 
+                                  nrow = length(dataframe)/4, 
+                                  byrow = T))
+    
+  }
   
   #using lapply to loop in c and find the header lines that match our ID and 
   #return a vector of positions 
@@ -247,7 +265,7 @@ findIDsBellow <- function(ID, dataframe){
     #creating the list to populate with taxa codes
     lowerTaxa <- c()
     
-    #the index serves two perpouses to act as a way to acess elements of the list and to keep 
+    #the index serves two perpouses to act as a way to access elements of the list and to keep 
     #track of the row of the data.table
     index <- 1
     
@@ -300,12 +318,12 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
       
       #looping through all of the taxa ID's
       
-      filteredReads <- filtReads(taxaList, seqFile)
+      filteredReads <- filtReads(taxaList, seqFile, inputFile)
       
       #just running the filtering for the ID provided 
     } else {
       taxaList <- c(ID)
-      filteredReads <- filtReads(taxaList, seqFile)
+      filteredReads <- filtReads(taxaList, seqFile, inputFile)
       
     }
     
@@ -319,12 +337,12 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
       taxaList <- findIDsBellow(ID, krakenReport)
       
       #removing all of the ID's that where found 
-      filteredReads <- exReads(taxaList, seqFile)
+      filteredReads <- exReads(taxaList, seqFile, inputFile)
       
       #just running the filtering for the ID provided 
     } else {
       taxaList <- c(ID)
-      filteredReads <- exReads(taxaList, seqFile)
+      filteredReads <- exReads(taxaList, seqFile, inputFile)
       
     }
     
@@ -334,41 +352,52 @@ workflow <- function(ID, seqFile, outputFile, meth, includeOtherTaxa, inputFile)
   stri_write_lines(filteredReads, outputFile, sep = '\n')
   
   #outputting info to the user
-  if (meth == 'F'){
-    print(inputFile)
-    print(paste('number of taxa IDs found:', length(taxaList)))
-    print(paste('number of reads found:', length(filteredReads)/2))
-    print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
-    print(paste('filtered reads have been written to:', outputFile))
-    print('')
+  if (stri_detect(inputFile, fixed = '.fasta') == T | stri_detect(inputFile, regex = '.fa\\b') == T) {
+    if (meth == 'F'){
+      print(inputFile)
+      print(paste('number of taxa IDs found:', length(taxaList)))
+      print(paste('number of reads found:', length(filteredReads)/2))
+      print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
+      print(paste('filtered reads have been written to:', outputFile))
+      print('')
+      
+    }else if(meth == 'E'){
+      print(inputFile)
+      print(paste('number of taxa IDs found:', length(taxaList)))
+      print(paste('number of reads found:', ((length(seqFile)/2) - length(filteredReads)/2)))
+      print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
+      print(paste('filtered reads have been written to:', outputFile))
+      print('')
+      
+    }
     
-  }else if(meth == 'E'){
-    print(inputFile)
-    print(paste('number of taxa IDs found:', length(taxaList)))
-    print(paste('number of reads found:', ((length(seqFile)/2) - length(filteredReads)/2)))
-    print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
-    print(paste('filtered reads have been written to:', outputFile))
-    print('')
+  } else if (stri_detect(inputFile, fixed = '.fastq') == T | stri_detect(inputFile, regex = '.fq\\b') == T) {
+    if (meth == 'F'){
+      print(inputFile)
+      print(paste('number of taxa IDs found:', length(taxaList)))
+      print(paste('number of reads found:', length(filteredReads)/4))
+      print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
+      print(paste('filtered reads have been written to:', outputFile))
+      print('')
+      
+    }else if(meth == 'E'){
+      print(inputFile)
+      print(paste('number of taxa IDs found:', length(taxaList)))
+      print(paste('number of reads found:', ((length(seqFile)/4) - length(filteredReads)/4)))
+      print(paste('percentage of reads retained:', (length(filteredReads)/length(seqFile)*100), '%'))
+      print(paste('filtered reads have been written to:', outputFile))
+      print('')
+      
+    }
     
   }
+  
 }
 
 
 ############################## main function ###################################
 
 main <- function(){
-  #passing data from the flags to variables:
-  #method variables
-  taxID <- opt$taxa_ID 
-  include_taxa_levels_bellow <- opt$include_lower_taxa
-  Method <- opt$method
-  inputType <- opt$input_type
-  
-  #input/output file variables
-  inputFilename <- opt$kraken_File
-  krakenOut <- stri_read_lines(inputFilename)
-  outputFilename <- opt$output_FileName
-  
   #checking for the required packages and if not installed prompting the user to install 
   if (dt_package == F) {
     install <- readline(prompt = 'Required package data.table not installed, would you like to install it? (y/n)')
@@ -401,7 +430,6 @@ main <- function(){
       stop('Required package not installed')
     }
     
-    
   }
   
   #checking for required flags 
@@ -419,6 +447,18 @@ main <- function(){
     
   }
   
+  #passing data from the flags to variables:
+  #method variables
+  taxID <- opt$taxa_ID 
+  include_taxa_levels_bellow <- opt$include_lower_taxa
+  Method <- opt$method
+  inputType <- opt$input_type
+  
+  #input/output file variables
+  inputFilename <- opt$kraken_File
+  krakenOut <- stri_read_lines(inputFilename)
+  outputFilename <- opt$output_FileName
+  
   if (inputType == 'SE' | inputType == 'C') {
     workflow(taxID, krakenOut, outputFilename, Method, include_taxa_levels_bellow, inputFilename)
     
@@ -428,11 +468,28 @@ main <- function(){
     krakenOut2 <- stri_read_lines(inputFilename2)
     outputFilename2 <- opt$output_FileName_2
     
-    #forward reads
-    workflow(taxID, krakenOut, outputFilename, Method, include_taxa_levels_bellow, inputFilename)
-    
-    #reverse reads
-    workflow(taxID, krakenOut2, outputFilename2, Method, include_taxa_levels_bellow, inputFilename2)
+    #using forking to parallelise the paired end workflow 
+    #importing mclapply function from the base package parallel
+    invisible(parallel::mclapply(1:2, 
+                                 function(x) {
+                                   if (x == 1) {
+                                     workflow(taxID, 
+                                              krakenOut, 
+                                              outputFilename, 
+                                              Method, 
+                                              include_taxa_levels_bellow, 
+                                              inputFilename)
+                                     
+                                   } else if (x == 2) {
+                                     workflow(taxID, 
+                                              krakenOut2, 
+                                              outputFilename2, 
+                                              Method, 
+                                              include_taxa_levels_bellow, 
+                                              inputFilename2)
+                                     
+                                     }
+                                   }, mc.cores = 2))
     
   }
   

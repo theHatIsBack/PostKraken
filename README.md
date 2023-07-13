@@ -44,8 +44,8 @@ This script is used to filter through the output of kraken2 and extract/exclude 
 ```{bash}
 Usage: filtering_kraken_output.R --i [PE,SE,C] --k KRAKEN_FILE [--k2 KRAKEN_FILE_2] 
                                  --o OUTPUT_FILENAME [--o2 OUTPUT_FILENAME_2]
-				                         --m [F,E] --t TAXA_ID [--include_lower_taxa [T,F]] 
-				                         [--r KRAKEN_REPORT_FILENAME]
+                                 --m [F,E] --t TAXA_ID [--include_lower_taxa [T,F]] 
+                                 [--r KRAKEN_REPORT_FILENAME]
 
 Description: Extracting reads identified as a specific taxa(s)
 

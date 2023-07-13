@@ -252,51 +252,43 @@ findIDsBellow <- function(ID, dataframe){
   #identifying level of taxa code supplied in list 
   level <- grep(pattern = pat[[1]][1], taxaSymbols)
   
-  #checking to make sure ID has levels bellow it and if it doesn't return the original ID
-  if(level == 9){
+  #removing the supplied taxa ID from the df so it doesn't return a null
+  trimmedReport2 <- trimmedReport[2:length(V4), ,]
+  
+  #creating the list to populate with taxa codes
+  lowerTaxa <- c()
+  
+  #the index serves two perpouses to act as a way to access elements of the list and to keep 
+  #track of the row of the data.table
+  index <- 1
+  
+  #using a for loop to output a list of lower taxa ID's
+  for (x in trimmedReport2$V4) {
+    #pulling out the taxa symbol and splitting it up into characters 
+    pat2 <- stri_split_boundaries(x, type = 'character')
     
-    return(ID)
+    #checking if the position of the next taxa symbol is higher or lower then the supplied taxa
+    #in the taxaSymbols list 
     
-  } else {
-    
-    #removing the supplied taxa ID from the df so it doesn't return a null
-    trimmedReport2 <- trimmedReport[2:length(V4), ,]
-    
-    #creating the list to populate with taxa codes
-    lowerTaxa <- c()
-    
-    #the index serves two perpouses to act as a way to access elements of the list and to keep 
-    #track of the row of the data.table
-    index <- 1
-    
-    #using a for loop to output a list of lower taxa ID's
-    for (x in trimmedReport2$V4) {
-      #pulling out the taxa symbol and splitting it up into characters 
-      pat2 <- stri_split_boundaries(x, type = 'character')
+    if (level < grep(pattern = pat2[[1]][1], taxaSymbols)){
+      results <- trimmedReport2[index, .(V5),]
+      lowerTaxa[index] <- results$V5
+      index <- index + 1
       
-      #checking if the position of the next taxa symbol is higher or lower then the supplied taxa
-      #in the taxaSymbols list 
+    } else if (level == grep(pattern = pat2[[1]][1], taxaSymbols) & is.na(pat2[[1]][2]) != is.na(pat[[1]][2])) {
+      results <- trimmedReport2[index, .(V5),]
+      lowerTaxa[index] <- results$V5
+      index <- index + 1
       
-      if (level < grep(pattern = pat2[[1]][1], taxaSymbols)){
-        results <- trimmedReport2[index, .(V5),]
-        lowerTaxa[index] <- results$V5
-        index <- index + 1
-        
-      } else if (level == grep(pattern = pat2[[1]][1], taxaSymbols) & is.na(pat2[[1]][2]) != is.na(pat[[1]][2])) {
-        results <- trimmedReport2[index, .(V5),]
-        lowerTaxa[index] <- results$V5
-        index <- index + 1
-        
-      } else {
-        break
-      }
+    } else {
+      break
     }
-    
-    #combining the new list of taxa with the old supplied taxa
-    listOfTaxa <- append(lowerTaxa, ID)
-    return(listOfTaxa)
-    
   }
+  
+  #combining the new list of taxa with the old supplied taxa
+  listOfTaxa <- append(lowerTaxa, ID)
+  return(listOfTaxa)
+    
   
 }
 
